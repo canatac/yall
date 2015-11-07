@@ -7,9 +7,21 @@
 //
 
 import Foundation
+import MapKit
 
 public class ServiceActorAPI{
 
+    
+    public class func getListWithMyLocation(serviceActor:String,location:CLLocation)->Dictionary<String,Dictionary<String, AnyObject>>{
+        if serviceActor == "PROVIDER"{
+            return ServiceProviderFactory.getListWithMyLocation(location)
+        }
+        else if serviceActor    ==  "ASKER"{
+            return ServiceAskerFactory.getListWithMyLocation(location)
+        }
+        return Dictionary<String,Dictionary<String, AnyObject>>()
+    }
+    
     public class func createServiceActor(serviceActor:String,formData:[String:String]){
         if serviceActor == "PROVIDER"{
             ServiceProviderFactory.createServiceProvider(
