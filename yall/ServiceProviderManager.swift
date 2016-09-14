@@ -21,7 +21,7 @@ class ServiceProviderManager{
         do{
             try object = query.getFirstObject()
             sa = ServiceProvider.createServiceProvider(
-                (object.objectId as? String!)!,
+                (object.objectId as String!)!,
                 newAddress:object["address"] as! String,
                 newName:object["name"] as! String,
                 newSurname:object["surname"] as! String,
@@ -31,16 +31,13 @@ class ServiceProviderManager{
                 newServices:object["services"] as! [String],
                 newGeoPoint:object["geoPoint"] as! PFGeoPoint
             )
-            //serviceProviderId:String,newAddress:String, newName:String, newSurname:String, newPhone:String,newEmail:String, newNotation:Int, newServices:[String], newGeoPoint:String
-            return sa
-            
+            return sa            
         }
         catch{
             print("PB OCCURRED IN FETCH PARSE")
             
         }
         return nil
-
     }
     
     class func getServiceProviderWithAddress(address:String)->ServiceProvider!{
@@ -93,6 +90,46 @@ class ServiceProviderManager{
 
     /////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
+    private func goGetWithUDID()->ServiceProvider?{
+        Parse.setApplicationId("ITZvBDCa8Dli79exPbgfc59hndUNPkrk22axXwt3",
+            clientKey: "nM5sBIR7vW0DXOT2Qn92hXXypVmDeRqujHbWHw50")
+        let sp : ServiceProvider!
+        let query = PFQuery(className:"ServiceProvider")
+        query.whereKey("udid", equalTo: UIDevice.currentDevice().identifierForVendor!.UUIDString)
+        var object: PFObject!
+        
+        do{
+            try object =  query.getFirstObject()
+            
+            print("\(object)")
+            sp = ServiceProvider.createServiceProvider(
+                object.objectId!,
+                newAddress:object["address"] as! String,
+                newName:object["name"] as! String,
+                newSurname:object["surname"] as! String,
+                newPhone:(object["phone"] as? String)!,
+                newEmail:(object["email"] as? String)!,
+                newNotation:object["notation"] as! Int,
+                newServices:object["services"] as! [String],
+                newGeoPoint:object["geoPoint"] as! PFGeoPoint
+            )
+            
+            return sp
+
+        }
+        catch{
+            print("PB OCCURRED IN FETCH PARSE")
+            
+        }
+        return nil
+    }
+    
+    class func getWithUDID() -> ServiceProvider?{
+        return sharedInstance.goGetWithUDID()
+    }
+    
+    /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
     
     private func goGetServiceProviderList(address:String)->[ServiceProvider]!{
         Parse.setApplicationId("ITZvBDCa8Dli79exPbgfc59hndUNPkrk22axXwt3",
@@ -109,7 +146,7 @@ class ServiceProviderManager{
             for object in objects{
                 sp.append(
                     ServiceProvider.createServiceProvider(
-                        (object.objectId as? String!)!,
+                        (object.objectId as String!)!,
                         newAddress:object["address"] as! String,
                         newName:object["name"] as! String,
                         newSurname:object["surname"] as! String,
@@ -130,7 +167,6 @@ class ServiceProviderManager{
             
         }
         return nil
-        
     }
 
     class func getServiceProviderList(address:String)->[ServiceProvider]!{
@@ -151,12 +187,7 @@ class ServiceProviderManager{
         var sps:[ServiceProvider] = [ServiceProvider]()
         do{
             try objects = query.findObjects()
-            print("BEFORE LOOP OBJECTS RETRIEVED in getServiceProviderListNearGeoPoint : \(objects)")
             for object in objects{
-                print("IN THE LOOP ON OBJECTS RETRIEVED in getServiceProviderListNearGeoPoint : \(object)")
-
-                //let sp = ServiceProviderManager.getServiceProviderWithAddress(object["address"] as! String) as ServiceProvider!
-                //let sp = ServiceProviderManager.getServiceProviderWithId(object.objectId!) as ServiceProvider!
                 let sp = ServiceProvider.createServiceProvider(
                     object.objectId!,
                     newAddress:object["address"] as! String,
@@ -206,8 +237,6 @@ class ServiceProviderManager{
             object["notation"]    = sp.notation
             object["geoPoint"]    = sp.geoPoint
             object["services"]    = sp.services
-
-            
         }
         catch{
             print("PB OCCURRED IN CREATING PARSE")
@@ -232,7 +261,7 @@ class ServiceProviderManager{
     
     @objc func save(notification:NSNotification){
         print("save \(notification.object?.description)")
-        var string:String = (notification.object?.description)!
+        let string:String = (notification.object?.description)!
         print("Formatting not object to string: \(string)")
         save(ObjectPoolForServiceProvider.getFromPool(string)!)
         print("save HERE")
@@ -246,25 +275,52 @@ class ServiceProviderManager{
         Parse.setApplicationId("ITZvBDCa8Dli79exPbgfc59hndUNPkrk22axXwt3",
             clientKey: "nM5sBIR7vW0DXOT2Qn92hXXypVmDeRqujHbWHw50")
         let spObject = PFObject(className: "ServiceProvider")
-        spObject["address"] =   sp.address
-        spObject["name"]    =   sp.name
-        spObject["surname"] =   sp.surname
-        spObject["phone"]       = sp.phone
-        spObject["email"]       = sp.email
-        spObject["notation"]    = sp.notation
-        spObject["geoPoint"]    = sp.geoPoint
-        spObject["services"]    = sp.services
+        spObject["address"]     =   sp.address
+        spObject["name"]        =   sp.name
+        spObject["surname"]     =   sp.surname
+        spObject["phone"]       =   sp.phone
+        spObject["email"]       =   sp.email
+        spObject["notation"]    =   sp.notation
+        spObject["geoPoint"]    =   sp.geoPoint
+        spObject["services"]    =   sp.services
+        spObject["udid"]        =   sp.udid
+
         
-        /*
+        spObject.saveInBackgroundWithBlock{(success: Bool, error:NSError?)-> Void in
+            
+            //
+            NSUserDefaults.standardUserDefaults().setObject(spObject.objectId, forKey: "serviceActorId")
+            NSUserDefaults.standardUserDefaults().setObject(sp.name, forKey: "serviceActorName")
+            NSUserDefaults.standardUserDefaults().setObject(sp.surname, forKey: "serviceActorSurname")
+            NSUserDefaults.standardUserDefaults().setObject(sp.address, forKey: "serviceActorAddress")
+            NSUserDefaults.standardUserDefaults().setObject(sp.phone, forKey: "serviceActorMobileNumber")
+            NSUserDefaults.standardUserDefaults().setObject(sp.email, forKey: "serviceActorEmail")
+            NSUserDefaults.standardUserDefaults().setObject(sp.geoPoint.latitude, forKey: "serviceActorGeoPointLatitude")
+            NSUserDefaults.standardUserDefaults().setObject(sp.geoPoint.longitude, forKey: "serviceActorGeoPointLongitude")
+            NSUserDefaults.standardUserDefaults().setObject(sp.services, forKey: "serviceActorServices")
+            NSUserDefaults.standardUserDefaults().setObject("PROVIDER", forKey: "serviceActorType")
+
+            NSNotificationCenter.defaultCenter().postNotificationName("net.canatac.hommeatoutfaire.serviceactormg.save.ok", object: nil)
+            
+        }
+    }
+    
+    class func delete(actorId:String){
+        // Initialize Parse.
+        Parse.setApplicationId("ITZvBDCa8Dli79exPbgfc59hndUNPkrk22axXwt3",
+            clientKey: "nM5sBIR7vW0DXOT2Qn92hXXypVmDeRqujHbWHw50")
+        
+        let query = PFQuery(className:"ServiceProvider")
+        query.whereKey("objectId", equalTo: actorId)
+        var object: PFObject!
+        
         do{
-            try spObject.save()
-            print("SP Object has been saved.")
+            try object =  query.getFirstObject()
+            try object.delete()
         }catch{
-            print("PB OCCURED WHEN SAVING SA")
+            print("PB IN DELETING OBJECT")
         }
-        */
-        spObject.saveInBackgroundWithBlock{(success: Bool, error:NSError?)-> Void in                NSNotificationCenter.defaultCenter().postNotificationName("net.canatac.hommeatoutfaire.serviceactormg.save.ok", object: nil)
-        }
+        
     }
     
     class func save(sp:ServiceProvider){

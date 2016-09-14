@@ -25,7 +25,7 @@ class ServiceAskerFactory{
             tmp["phone"]        =   asker.phone
             tmp["email"]        =   asker.email
             tmp["notation"]     =   asker.notation
-            tmp["services"]     =   ServicesManager.getListNames(asker.services)
+            tmp["services"]     =   asker.services
             tmp["latitude"]     =   asker.geoPoint.latitude
             tmp["longitude"]    =   asker.geoPoint.longitude
             
@@ -34,18 +34,33 @@ class ServiceAskerFactory{
         return myDic
     }
     
+    class func getWithUDID()->ServiceAsker?{
+        return ServiceAskerManager.getWithUDID()
+    }
+    
     class func createServiceAsker(newAddress:String,
         newName: String,
         newSurname:String,
         newEmail:String,
-        newPhone:String){
+        newPhone:String,
+        newServices:[String],
+        newGeoPoint:[String:Double]){
            
             ServiceAskerManager.createServiceAsker(
                 newAddress,
                 newName: newName,
                 newSurname: newSurname,
                 newEmail: newEmail,
-                newPhone: newPhone
+                newPhone: newPhone,
+                newServices:newServices,
+                newGeoPoint:newGeoPoint
             )
     }
+    
+    class func deleteServiceAsker(actorId:String){
+        _ = ServiceAsker.deleteServiceAsker(
+            actorId
+        )
+    }
+
 }

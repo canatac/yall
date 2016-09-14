@@ -10,17 +10,18 @@ import Foundation
 import Parse
 
 class ServiceProvider:ServiceActor{
-    internal var idBV:String
-    private var addressBV:String
-    internal var nameBV:String
-    internal var surnameBV:String
-    internal var phoneBV:String
-    internal var emailBV:String
-    private var notationBV:Int
-    private var geoPointBV:PFGeoPoint
-    private var servicesBV:[String]
+    internal    var idBV:String
+    private     var addressBV:String
+    internal    var nameBV:String
+    internal    var surnameBV:String
+    internal    var phoneBV:String
+    internal    var emailBV:String
+    private     var notationBV:Int
+    private     var geoPointBV:PFGeoPoint
+    private     var servicesBV:[String]
+    private     var udidBV:String
     
-    private init(address:String, name:String, surname:String, email:String, phone:String ){
+    private init(address:String, name:String, surname:String, email:String, phone:String, notation:Int, services:[String], geoPoint:PFGeoPoint ){
         
         let id = Int(rand())
         self.idBV                   =   String(id)
@@ -29,9 +30,10 @@ class ServiceProvider:ServiceActor{
         self.surnameBV              =   surname
         self.phoneBV                =   phone
         self.emailBV                =   email
-        self.notationBV             =   0
-        self.geoPointBV             =   PFGeoPoint()
-        self.servicesBV             =   [String]()
+        self.notationBV             =   notation
+        self.geoPointBV             =   geoPoint
+        self.servicesBV             =   services
+        self.udidBV                 =   UIDevice.currentDevice().identifierForVendor!.UUIDString
 
         ObjectPoolForServiceProvider.returnToPool(self)
         
@@ -47,7 +49,7 @@ class ServiceProvider:ServiceActor{
                 
                 itemFromPool.geoPointBV = PFGeoPoint(location: p.location as CLLocation?)
                 ObjectPoolForServiceProvider.returnToPool(itemFromPool)
-                // SEND A NOTIFICATION TO SAVE SERVICEASKER
+                // SEND A NOTIFICATION TO SAVE SERVICEPROVIDER
                 NSNotificationCenter.defaultCenter().postNotificationName("net.canatac.hommeatoutfaire.serviceprovider.geopoint.ok", object: id)
             }
         })
@@ -63,6 +65,7 @@ class ServiceProvider:ServiceActor{
         self.notationBV             =   notation
         self.servicesBV             =   services
         self.geoPointBV             =   geoPoint
+        self.udidBV                 =   UIDevice.currentDevice().identifierForVendor!.UUIDString
     }
     var serviceProviderId:String{
         get{return self.idBV}
@@ -94,6 +97,11 @@ class ServiceProvider:ServiceActor{
         set{self.servicesBV =   newValue}
     }
     
+    var udid:String{
+        get{return self.udidBV}
+        set{self.udidBV =   newValue}
+    }
+    
     var geoPoint:PFGeoPoint{
         get{return self.geoPointBV}
         set{self.geoPointBV = newValue}
@@ -108,9 +116,9 @@ class ServiceProvider:ServiceActor{
         return false
     }
     // NEW
-    class func createServiceProvider(newAddress:String, newName:String, newSurname:String, newEmail:String, newPhone:String)->ServiceProvider!{
+    class func createServiceProvider(newAddress:String, newName:String, newSurname:String, newEmail:String, newPhone:String, newNotation:Int, newServices:[String], newGeoPoint:PFGeoPoint)->ServiceProvider!{
         var sp : ServiceProvider!
-        sp = ServiceProvider(address:newAddress, name:newName, surname:newSurname, email:newEmail, phone:newPhone)
+        sp = ServiceProvider(address:newAddress, name:newName, surname:newSurname, email:newEmail, phone:newPhone, notation:newNotation, services:newServices, geoPoint:newGeoPoint)
         
         return sp
     }
@@ -122,5 +130,8 @@ class ServiceProvider:ServiceActor{
         return sp
     }
 
+    class func deleteServiceProvider(actorId:String){
+        ServiceProviderManager.delete(actorId)
+    }
     
 }

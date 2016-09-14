@@ -14,29 +14,32 @@ final class ServiceAskerManager{
     /////////////////////////////////////////////////////////
     
     private func goCreateServiceAsker(newAddress:String,
-        newName: String,
+        newName:    String,
         newSurname: String,
-        newEmail: String,
-        newPhone: String){
-            
-            
-            
+        newEmail:   String,
+        newPhone:   String,
+        newServices:[String],
+        newGeoPoint:PFGeoPoint){
             ServiceAsker.createServiceAsker(
-                newAddress,
-                newName: newName,
-                newSurname: newSurname,
-                newEmail: newEmail,
-                newPhone: newPhone
+                                newAddress,
+                newName:        newName,
+                newSurname:     newSurname,
+                newEmail:       newEmail,
+                newPhone:       newPhone,
+                newNotation:    0,
+                newServices:    newServices,
+                newGeoPoint:    newGeoPoint
             )
-    
     }
     
     class func createServiceAsker(newAddress:String,
-        newName: String,
+        newName:    String,
         newSurname: String,
-        newEmail: String,
-        newPhone: String){
-            sharedInstance.goCreateServiceAsker(newAddress, newName: newName, newSurname: newSurname, newEmail: newEmail, newPhone: newPhone)
+        newEmail:   String,
+        newPhone:   String,
+        newServices:[String],
+        newGeoPoint:[String:Double]){
+            sharedInstance.goCreateServiceAsker(newAddress, newName: newName, newSurname: newSurname, newEmail: newEmail, newPhone: newPhone, newServices:newServices, newGeoPoint:PFGeoPoint(latitude: newGeoPoint["latitude"]!,longitude: newGeoPoint["longitude"]!))
     }
     
     /////////////////////////////////////////////////////////
@@ -74,6 +77,44 @@ final class ServiceAskerManager{
         }
         return nil
     
+    }
+    
+    private func goGetWithUDID()->ServiceAsker?{
+        Parse.setApplicationId("ITZvBDCa8Dli79exPbgfc59hndUNPkrk22axXwt3",
+            clientKey: "nM5sBIR7vW0DXOT2Qn92hXXypVmDeRqujHbWHw50")
+        let sa : ServiceAsker!
+        let query = PFQuery(className:"ServiceAsker")
+        query.whereKey("udid", equalTo: UIDevice.currentDevice().identifierForVendor!.UUIDString)
+        var object: PFObject!
+        
+        do{
+            try object =  query.getFirstObject()
+            
+            print("\(object)")
+            sa = ServiceAsker.createServiceAsker(
+                (object.objectId                        as? String!)!,
+                newAddress:object["address"]            as! String,
+                newName:object["name"]                  as! String,
+                newSurname:object["surname"]            as! String,
+                newPhone:(object["phone"]               as? String)!,
+                newEmail:(object["email"]               as? String)!,
+                newNotation:object["notation"]          as! Int,
+                newDisabledSPs:object["disabledSPs"]    as! [String],
+                newGeoPoint:object["geoPoint"]          as! PFGeoPoint,
+                newServices:object["services"]          as! [String]
+                
+            )
+            return sa
+        }
+        catch{
+            print("PB OCCURRED IN FETCH PARSE")
+            
+        }
+        return nil
+    }
+    
+    class func getWithUDID() -> ServiceAsker?{
+        return sharedInstance.goGetWithUDID()
     }
     
     class func getServiceAskerWithAddress(address:String)->ServiceAsker!{
@@ -244,7 +285,6 @@ final class ServiceAskerManager{
         catch{
             print("PB IN SAVING UPDATED OBJECT")
         }
-
     }
     
     class func update(sa:ServiceAsker){
@@ -252,7 +292,6 @@ final class ServiceAskerManager{
     }
 
     /////////////////////////////////////////////////////////
-
     
     @objc func save(notification:NSNotification){
         
@@ -265,8 +304,6 @@ final class ServiceAskerManager{
             print("save HERE")
 
         NSNotificationCenter.defaultCenter().removeObserver(self, name: "net.canatac.hommeatoutfaire.serviceasker.geopoint.ok", object: nil)
-        
-        
     }
     
     class func save(notification:NSNotification){
@@ -281,28 +318,32 @@ final class ServiceAskerManager{
         Parse.setApplicationId("ITZvBDCa8Dli79exPbgfc59hndUNPkrk22axXwt3",
             clientKey: "nM5sBIR7vW0DXOT2Qn92hXXypVmDeRqujHbWHw50")
         let saObject = PFObject(className: "ServiceAsker")
-        saObject["address"]     = sa.address
-        saObject["name"]        = sa.name
-        saObject["surname"]     = sa.surname
-        saObject["phone"]       = sa.phone
-        saObject["email"]       = sa.email
-        saObject["notation"]    = sa.notation
-        saObject["disabledSPs"] = sa.disabledSPs
-        saObject["geoPoint"]    = sa.geoPoint
-        saObject["services"]    = sa.services
+        saObject["address"]     =   sa.address
+        saObject["name"]        =   sa.name
+        saObject["surname"]     =   sa.surname
+        saObject["phone"]       =   sa.phone
+        saObject["email"]       =   sa.email
+        saObject["notation"]    =   sa.notation
+        saObject["disabledSPs"] =   sa.disabledSPs
+        saObject["geoPoint"]    =   sa.geoPoint
+        saObject["services"]    =   sa.services
+        saObject["udid"]        =   sa.udid
 
-        //        saObject.saveInBackgroundWithBlock { (success: Bool, error: NSError?) -> Void in
-/*
-        do{
-            try saObject.save()
-                        print("SA Object has been saved.")
-
-        }catch{
-            print("PB OCCURED WHEN SAVING SA")
-        }
-
-*/
-        saObject.saveInBackgroundWithBlock{(success: Bool, error:NSError?)-> Void in                NSNotificationCenter.defaultCenter().postNotificationName("net.canatac.hommeatoutfaire.serviceactormg.save.ok", object: nil)
+        saObject.saveInBackgroundWithBlock{(success: Bool, error:NSError?)-> Void in
+            
+            //
+            NSUserDefaults.standardUserDefaults().setObject(saObject.objectId, forKey: "serviceActorId")
+            NSUserDefaults.standardUserDefaults().setObject(sa.name, forKey: "serviceActorName")
+            NSUserDefaults.standardUserDefaults().setObject(sa.surname, forKey: "serviceActorSurname")
+            NSUserDefaults.standardUserDefaults().setObject(sa.address, forKey: "serviceActorAddress")
+            NSUserDefaults.standardUserDefaults().setObject(sa.phone, forKey: "serviceActorMobileNumber")
+            NSUserDefaults.standardUserDefaults().setObject(sa.email, forKey: "serviceActorEmail")
+            NSUserDefaults.standardUserDefaults().setObject(sa.geoPoint.latitude, forKey: "serviceActorGeoPointLatitude")
+            NSUserDefaults.standardUserDefaults().setObject(sa.geoPoint.longitude, forKey: "serviceActorGeoPointLongitude")
+            NSUserDefaults.standardUserDefaults().setObject(sa.services, forKey: "serviceActorServices")
+            NSUserDefaults.standardUserDefaults().setObject("ASKER", forKey: "serviceActorType")
+            //
+            NSNotificationCenter.defaultCenter().postNotificationName("net.canatac.hommeatoutfaire.serviceactormg.save.ok", object: nil)
         }
 
     }
@@ -313,6 +354,24 @@ final class ServiceAskerManager{
     }
    
 
+    class func delete(actorId:String){
+        // Initialize Parse.
+        Parse.setApplicationId("ITZvBDCa8Dli79exPbgfc59hndUNPkrk22axXwt3",
+            clientKey: "nM5sBIR7vW0DXOT2Qn92hXXypVmDeRqujHbWHw50")
+        
+        let query = PFQuery(className:"ServiceAsker")
+        query.whereKey("objectId", equalTo: actorId)
+        var object: PFObject!
+        
+        do{
+            try object =  query.getFirstObject()
+            try object.delete()
+        }catch{
+            print("PB IN DELETING OBJECT")
+        }
+        
+    }
+    
     /////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////

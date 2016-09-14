@@ -26,7 +26,7 @@ class ServiceProviderFactory{
             tmp["phone"]        =   provider.phone
             tmp["email"]        =   provider.email
             tmp["notation"]     =   provider.notation
-            tmp["services"]     =   ServicesManager.getListNames(provider.services)
+            tmp["services"]     =   provider.services
             tmp["latitude"]     =   provider.geoPoint.latitude
             tmp["longitude"]    =   provider.geoPoint.longitude
 
@@ -36,22 +36,37 @@ class ServiceProviderFactory{
         
     }
     
+    class func getWithUDID()->AnyObject?{
+        return ServiceProviderManager.getWithUDID()
+    }
     
     class func createServiceProvider(
-        newAddress:String,
-        newName: String,
-        newSurname:String,
-        newEmail:String,
-        newPhone:String
+        newAddress:     String,
+        newName:        String,
+        newSurname:     String,
+        newEmail:       String,
+        newPhone:       String,
+        newNotation:    Int,
+        newServices:    [String],
+        newGeoPoint:    [String:Double]
         )
     {
-        let serviceProvider = ServiceProvider.createServiceProvider(
+        _ = ServiceProvider.createServiceProvider(
             newAddress,
-            newName: newName,
+            newName:    newName,
             newSurname: newSurname,
-            newEmail: newEmail,
-            newPhone: newPhone
+            newEmail:   newEmail,
+            newPhone:   newPhone,
+            newNotation:newNotation,
+            newServices:newServices,
+            newGeoPoint:PFGeoPoint(latitude: newGeoPoint["latitude"]!, longitude: newGeoPoint["longitude"]!)
         )
         
+    }
+    
+    class func deleteServiceProvider(actorId:String){
+        _ = ServiceProvider.deleteServiceProvider(
+            actorId
+        )
     }
 }

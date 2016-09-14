@@ -23,8 +23,9 @@ class ServiceAsker:ServiceActor{
     private var disabledSPsBV:[String]
     private var geoPointBV:PFGeoPoint
     private var servicesBV:[String]
+    private var udidBV:String
 
-    private init(address:String, name:String, surname:String, email:String, phone:String){
+    private init(address:String, name:String, surname:String, email:String, phone:String, notation:Int, services:[String], geoPoint:PFGeoPoint){
         
         let id = Int(rand())
         self.idBV               =   String(id)
@@ -33,14 +34,14 @@ class ServiceAsker:ServiceActor{
         self.surnameBV          =   surname
         self.phoneBV            =   phone
         self.emailBV            =   email
-        self.notationBV         =   0
+        self.notationBV         =   notation
         self.disabledSPsBV      =   [String]()
-        self.geoPointBV         =   PFGeoPoint()
-        self.servicesBV         =   [String]()
+        self.geoPointBV         =   geoPoint
+        self.servicesBV         =   services
+        self.udidBV             =   UIDevice.currentDevice().identifierForVendor!.UUIDString
         
         ObjectPoolForServiceAsker.returnToPool(self)
         
-        //super.init()
         NSNotificationCenter.defaultCenter().addObserver(ServiceAskerManager.sharedInstance,
             selector: "save:",
             name: "net.canatac.hommeatoutfaire.serviceasker.geopoint.ok",
@@ -71,6 +72,7 @@ class ServiceAsker:ServiceActor{
         self.disabledSPsBV  =   disabledSPs
         self.geoPointBV     =   geoPoint
         self.servicesBV     =   services
+        self.udidBV         =   UIDevice.currentDevice().identifierForVendor!.UUIDString
 
     }
     var serviceAskerId:String{
@@ -110,11 +112,15 @@ class ServiceAsker:ServiceActor{
         get{return servicesBV}
         set{self.servicesBV = newValue}
     }
+    var udid:String{
+        get{return udidBV}
+        set{self.udidBV = newValue}
+    }
     
     // NEW
-    class func createServiceAsker(newAddress:String, newName:String, newSurname:String, newEmail:String, newPhone:String)->ServiceAsker!{
+    class func createServiceAsker(newAddress:String, newName:String, newSurname:String, newEmail:String, newPhone:String, newNotation:Int, newServices:[String], newGeoPoint:PFGeoPoint)->ServiceAsker!{
         var sa : ServiceAsker!
-        sa = ServiceAsker(address:newAddress, name:newName, surname:newSurname, email:newEmail, phone:newPhone)
+        sa = ServiceAsker(address:newAddress, name:newName, surname:newSurname, email:newEmail, phone:newPhone, notation:newNotation, services:newServices, geoPoint:newGeoPoint)
         
         return sa
     }
@@ -123,6 +129,10 @@ class ServiceAsker:ServiceActor{
         var sa : ServiceAsker!
         sa = ServiceAsker(serviceAskerId:serviceAskerId,address:newAddress, name:newName, surname:newSurname, phone:newPhone,email:newEmail, notation:newNotation, disabledSPs:newDisabledSPs, geoPoint:newGeoPoint,services:newServices)
         return sa
+    }
+    
+    class func deleteServiceAsker(actorId:String){
+        ServiceAskerManager.delete(actorId)
     }
     
     func accept(validator:Validator){
